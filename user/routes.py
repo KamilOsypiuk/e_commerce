@@ -83,6 +83,7 @@ def update_user(
     database=Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    update_fields.password = hash_password(update_fields.password)
     statement = update(User).where(User.id == user.id).values(**update_fields.dict())
     database.execute(statement)
     database.commit()

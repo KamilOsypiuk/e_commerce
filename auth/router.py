@@ -19,14 +19,14 @@ router = APIRouter(tags=["auth"])
     response_model=UserOutput,
 )
 async def register_user(
-    data: UserRegisterInput, database=Depends(get_db)
+    user: UserRegisterInput, database=Depends(get_db)
 ) -> UserOutput:
-    if (user := read_user(data.email, database=database)) is not None:
+    if (user := read_user(user.email, database=database)) is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exist",
         )
-    return create_user(data.username, data.email, data.password, database=database)
+    return create_user(user.username, user.email, user.password, database=database)
 
 
 @router.post(

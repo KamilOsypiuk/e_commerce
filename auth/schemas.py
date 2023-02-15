@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import Any
+from user.password import hash_password
 
 
 class UserOutput(BaseModel):
@@ -11,10 +12,10 @@ class UserOutput(BaseModel):
 
 
 class UserRegisterInput(BaseModel):
-    username: str = Field(default=None)
+    username: str = Field()
     email: EmailStr = Field()
     password: str = Field(min_length=6, max_length=30)
-    fullname: str = Field(default=None)
+    fullname: str = Field()
 
 
 class UserUpdateInput(UserRegisterInput):
