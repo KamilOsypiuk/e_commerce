@@ -1,13 +1,12 @@
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import HTTPException, status, Depends, APIRouter
 
-
+from auth.jwt import create_access_token, create_refresh_token
 from database import get_db
 from user.model import User
-from user.routes import create_user, read_user, get_current_user
 from user.password import verify_password
-from auth.schemas import UserOutput, UserRegisterInput, TokenOutput
-from auth.json_token import create_access_token, create_refresh_token
+from user.schemas import TokenOutput, UserOutput, UserRegisterInput
+from user.services import create_user, get_current_user, read_user_by_email
 
 router = APIRouter(tags=["auth"])
 
@@ -18,15 +17,15 @@ router = APIRouter(tags=["auth"])
     response_description="Item have been created successfully",
     response_model=UserOutput,
 )
-async def register_user(
-    user: UserRegisterInput, database=Depends(get_db)
+def register_user(
+        user: UserRegisterInput, database=Depends(get_db)
 ) -> UserOutput:
-    if (user := read_user(user.email, database=database)) is not None:
+    if read_user_by_email(user.email, database=database) is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exist",
         )
-    return create_user(user.username, user.email, user.password, database=database)
+    return create_user(user.username, user.email, user.fullname, user.password, database)
 
 
 @router.post(
@@ -35,8 +34,8 @@ async def register_user(
     response_description="You have been successfully logged in",
     response_model=TokenOutput,
 )
-async def login(data: OAuth2PasswordRequestForm = Depends(), database=Depends(get_db)):
-    if (user := read_user(email=data.username, database=database)) is None:
+def login(data: OAuth2PasswordRequestForm = Depends(), database=Depends(get_db)):
+    if (user := read_user_by_email(email=data.username, database=database)) is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Credentials"
         )
@@ -56,5 +55,5 @@ async def login(data: OAuth2PasswordRequestForm = Depends(), database=Depends(ge
     summary="Get details of currently logged in user",
     response_model=UserOutput,
 )
-async def get_me(user: User = Depends(get_current_user)):
+def get_me(user: User = Depends(get_current_user)):
     return user

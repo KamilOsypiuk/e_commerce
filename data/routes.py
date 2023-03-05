@@ -1,10 +1,11 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
+from sqlmodel import select
+
+from data.model import Data
 from database import get_db
 from user.model import User
-from sqlmodel import select
 from user.routes import get_current_user
-from data.model import Data
-
-from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter(tags=["data"])
 
@@ -15,23 +16,24 @@ router = APIRouter(tags=["data"])
     response_description="Item have been created successfully",
 )
 def create_data(
-    first_name,
-    last_name,
-    database=Depends(get_db),
-    user: User = Depends(get_current_user),
-):
+        first_name: str,
+        last_name: str,
+        database=Depends(get_db),
+        user: User = Depends(get_current_user),
+) -> Response:
     database.add(Data(first_name=first_name, last_name=last_name, user_id=user.id))
     database.commit()
+    return Response(status_code=status.HTTP_201_CREATED)
 
 
 @router.get(
-    "/data/{id}/",
+    "/data/{id}",
     status_code=status.HTTP_200_OK,
     response_description="Successfully fetched",
 )
 def get_data(
-    id, database=Depends(get_db), user: User = Depends(get_current_user)
-):
+        id: int, database=Depends(get_db), user: User = Depends(get_current_user)
+) -> Data:
     statement = select(Data).where(Data.id == id, Data.user_id == user.id).limit(1)
     data = database.scalar(statement)
     if data is None:
@@ -47,15 +49,14 @@ def get_data(
     response_description="Successfully fetched",
 )
 def get_many_data(
-    limit=None,
-    offset=None,
-    database=Depends(get_db),
-    user: User = Depends(get_current_user),
-):
+        limit: int = None,
+        offset: int = None,
+        database=Depends(get_db),
+        user: User = Depends(get_current_user),
+) -> list:
     statement = (
         select(Data)
         .where(Data.user_id == user.id)
-        .order_by(Data.id)
         .limit(limit)
         .offset(offset)
     )
@@ -70,31 +71,32 @@ def get_many_data(
     response_description="Successfully updated",
 )
 def update_data(
-    id,
-    first_name,
-    last_name,
-    database=Depends(get_db),
-    user: User = Depends(get_current_user),
-):
+        id: int,
+        first_name: str,
+        last_name: str,
+        database=Depends(get_db),
+        user: User = Depends(get_current_user),
+) -> Response:
     statement = select(Data).where(Data.id == id, Data.user_id == user.id).limit(1)
-    data = database.scalar(statement)
-    data.first_name = first_name
-    data.last_name = last_name
-    if data is None:
+    if statement is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
         )
+    data = database.scalar(statement)
+    data.first_name = first_name
+    data.last_name = last_name
     database.commit()
+    return Response(status_code=status.HTTP_200_OK)
 
 
 @router.delete(
-    "/data/",
+    "/data/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     response_description="Successfully deleted",
 )
 def delete_data(
-    id, database=Depends(get_db), user: User = Depends(get_current_user)
-):
+        id: int, database=Depends(get_db), user: User = Depends(get_current_user)
+) -> Response:
     statement = select(Data).where(Data.id == id, Data.user_id == user.id).limit(1)
     data = database.scalar(statement)
     if data is None:
@@ -103,3 +105,4 @@ def delete_data(
         )
     database.delete(data)
     database.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

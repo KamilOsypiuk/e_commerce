@@ -1,4 +1,5 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
+
 from user.model import User
 
 
@@ -7,4 +8,4 @@ class Data(SQLModel, table=True):
     first_name: str
     last_name: str
     user_id: int = Field(default=None, foreign_key=User.id)
-    title: str = Field(default=None)
+    title: str

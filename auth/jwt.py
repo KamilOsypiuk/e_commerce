@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta
 import os
-from jose import jwt
+from datetime import datetime, timedelta
 from uuid import uuid4
 
+from jose import jwt
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 REFRESH_SECRET_KEY = os.environ["REFRESH_SECRET_KEY"]
